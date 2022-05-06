@@ -124,7 +124,6 @@ int e1000_transmit(const void *data, size_t len) {
 struct ethernet_h{
     //	unsigned char preamble[7];
     //	unsigned char delimiter;
-
     unsigned char destAddress[6];
 	unsigned char srcAddress[6];
     // if value < 1500(max allowed frame size); specifies length - ver802.2
