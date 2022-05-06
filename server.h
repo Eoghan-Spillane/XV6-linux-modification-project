@@ -34,7 +34,7 @@ const char *content_500 = "500 Internal Server Error";
 const char *content_200 = "Hello from OSH web server";
 
 void send_file_response(int connfd, FILE *file);
-void send_response(int connfd, status_t status, const char *content, size_t content_length);
+void send_response(int connfd, status_t status, const char *content, size_t content_length, int type);
 FILE *handle_request(const request_t *req);
 int parse_request(const char *req_str, request_t *req_info);
 

@@ -41,7 +41,7 @@ int parse_request(const char *req_str, request_t *req_info) {
     printf("method %s uri %s\n",req_info->method, req_info->uri);
 }
 
-void send_response(int connfd, status_t status, const char *content, size_t content_length) {
+void send_response(int connfd, status_t status, const char *content, size_t content_length, int type) {
     char buf[512];
 
     if (status == NF) {
@@ -52,10 +52,17 @@ void send_response(int connfd, status_t status, const char *content, size_t cont
         sprintf(buf, "HTTP/1.0 500 Internal Servere Error\r\n");
     }
 
-    sprintf(buf, "%sContent-Length: %lu\r\n\r\n", buf, content_length);
-    
-    size_t buf_len = strlen(buf);
+    sprintf(buf, "%sContent-Length: %lu\r\n", buf, content_length);
 
+    //Content Type
+    if(!type){
+        sprintf(buf, "%sContent-Type: %s\r\n\r\n", buf, "text/html; charset=utf-8");
+    }
+    else{
+        sprintf(buf, "%sContent-Type: %s\r\n\r\n", buf, "text/text; charset=utf-8");
+    }
+   
+    size_t buf_len = strlen(buf);
     if (rio_writen(connfd, buf, buf_len) < buf_len) {
         fprintf(stderr, "error while sending response\n");
         return;
@@ -178,7 +185,7 @@ void *connection_handler(void *socket_desc){
             request_t req_info;
             if (parse_request(data, &req_info) < 0) {
                 //error
-                send_response(sock, ISE, content_500, strlen(content_500));
+                send_response(sock, ISE, content_500, strlen(content_500), 1);
                 break;
             }
             else{
@@ -202,13 +209,18 @@ void *connection_handler(void *socket_desc){
                     fclose(file);
                     strcat(message, "\n\n");
 
-                    //Send Response
-                    send_response(sock, OK, message, strlen(message));   
+                    //Get content type and send response
+                    if(*actPath && actPath[strlen(actPath + 1)] == 'l'){
+                        send_response(sock, OK, message, strlen(message), 0);
+                    }
+                    else{
+                        send_response(sock, OK, message, strlen(message), 1); 
+                    }
+                      
                 }
                 else{ // File not found
                     printf("File Does not exist\n");
-                    char * pp = "404 file not found";
-                    send_response(sock, NF, pp, strlen(pp));
+                    send_response(sock, NF, content_404, strlen(content_404), 1);
                 }
             }
         }
