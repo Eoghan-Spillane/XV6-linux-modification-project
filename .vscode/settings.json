@@ -1,5 +1,11 @@
 {
     "files.associations": {
-        "random": "c"
+        "random": "c",
+        "net.h": "c",
+        "types.h": "c",
+        "defs.h": "c",
+        "e1000.h": "c",
+        "memlayout.h": "c",
+        "traps.h": "c"
     }
 }

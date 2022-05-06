@@ -27,9 +27,7 @@ static char rx_buffs[NRXDESC][RX_PKT_BUFF_SIZE];
 
 uint8_t mac_addr[6];
 
-int
-e1000_tx_init(void) 
-{
+int e1000_tx_init(void) {
     int i;
     
     // Check if alignment requirements are satisfied  
@@ -50,10 +48,10 @@ e1000_tx_init(void)
     E1000_REG(E1000_TDT)   = 0;
     
     // Program TCTL & TIPG
-//#define E1000_TCTL           0x00400    /* Transmit Control - R/W */
-//#define E1000_TCTL_EN     0x00000002    /* enable */
-//#define E1000_TCTL_PSP    0x00000008    /* pad short packets */
-//#define E1000_TCTL_COLD   0x003ff000    /* collision distance */
+    //#define E1000_TCTL           0x00400    /* Transmit Control - R/W */
+    //#define E1000_TCTL_EN     0x00000002    /* enable */
+    //#define E1000_TCTL_PSP    0x00000008    /* pad short packets */
+    //#define E1000_TCTL_COLD   0x003ff000    /* collision distance */
     E1000_REG(E1000_TCTL) |= E1000_TCTL_EN;
     E1000_REG(E1000_TCTL) |= E1000_TCTL_PSP;
 
@@ -65,9 +63,7 @@ e1000_tx_init(void)
     return 0;
 }
 
-int
-e1000_rx_init(void)
-{
+int e1000_rx_init(void){
     int i;
     memset(rx_queue, 0, sizeof(rx_queue));
     for (i = 0; i < NRXDESC; i++)
@@ -78,12 +74,12 @@ e1000_rx_init(void)
     // packets addressed to the card
     E1000_REG(E1000_RAL0)  = 0x12005452;
     E1000_REG(E1000_RAH0)  = 0x80005634;   
-   uint32_t macaddr_l = E1000_REG(E1000_RAL0);
-  uint32_t macaddr_h = E1000_REG(E1000_RAH0);
-  *(uint32_t*)mac_addr = macaddr_l;
-  *(uint16_t*)(&mac_addr[4]) = (uint16_t)macaddr_h;
-  *(uint32_t*)mac_addr = macaddr_l;
-  *(uint32_t*)(&mac_addr[4]) = (uint16_t)macaddr_h; 
+    uint32_t macaddr_l = E1000_REG(E1000_RAL0);
+    uint32_t macaddr_h = E1000_REG(E1000_RAH0);
+    *(uint32_t*)mac_addr = macaddr_l;
+    *(uint16_t*)(&mac_addr[4]) = (uint16_t)macaddr_h;
+    *(uint32_t*)mac_addr = macaddr_l;
+    *(uint32_t*)(&mac_addr[4]) = (uint16_t)macaddr_h; 
 
     // initialize regs of receive descriptor ring
     E1000_REG(E1000_RDBAL) = V2P(rx_queue); 
@@ -98,15 +94,13 @@ e1000_rx_init(void)
     // configure e1000 to strip the Ethernet CRC
     E1000_REG(E1000_RCTL) |= E1000_RCTL_SECRC;
 
-    E1000_REG(E1000_RCTL) |=        E1000_RCTL_UPE;    /* unicast promiscuous enable */
-    E1000_REG(E1000_RCTL) |=       E1000_RCTL_MPE;
+    E1000_REG(E1000_RCTL) |= E1000_RCTL_UPE;    /* unicast promiscuous enable */
+    E1000_REG(E1000_RCTL) |= E1000_RCTL_MPE;
      
     return 0;
 }
 
-int 
-e1000_transmit(const void *data, size_t len) 
-{
+int e1000_transmit(const void *data, size_t len) {
     uint32_t tail = E1000_REG(E1000_TDT);
 
     if (len > TX_PKT_BUFF_SIZE)
@@ -128,13 +122,13 @@ e1000_transmit(const void *data, size_t len)
 
 
 struct ethernet_h{
-        //	unsigned char preamble[7];
-        //	unsigned char delimiter;
+    //	unsigned char preamble[7];
+    //	unsigned char delimiter;
 
     unsigned char destAddress[6];
 	unsigned char srcAddress[6];
-        // if value < 1500(max allowed frame size); specifies length - ver802.2
-        // else value > 1536; specifies which protocol is encapsulated in the payload - Ethernet II framing
+    // if value < 1500(max allowed frame size); specifies length - ver802.2
+    // else value > 1536; specifies which protocol is encapsulated in the payload - Ethernet II framing
     unsigned char etherType[2];
 };
 
@@ -144,7 +138,6 @@ struct ip_h
     unsigned char v_ihl; //internet header length
     unsigned char service; //Type of service - used to define the way routers handle the datagram
     unsigned char total_len[2]; //16 bits, max packet size - 2^16 - 65,536
-
     unsigned char identification[2]; //Used along with src address to uniquely id a datagram
     unsigned char offset[2]; // 00000xxx {Reserved = 0, Don't Fragment, Fragment} 00000000
     unsigned char ttl; //no. of hops
@@ -175,58 +168,99 @@ struct tls_h{
 
 
 void parse1(char *packet, int len){
-
-
-           int  j;
+    int  j;
     printf("len =%d\n",len);
-    /*Header Structs*/
-    struct ethernet_h * ethernet;
-   // struct ip_h * ip;
-   // struct tcp_h * tcp;
-        /*ethernet header memory map*/
-        ethernet = (struct ethernet_h *)(packet);
-        printf("\nMAC src:\t");
-        for(j=0;j<6;j++)
-        {
-            printf("%x:", ethernet->srcAddress[j]);
-        }
- printf("\n");
 
-       
+    /*Header Structs*/
+    struct eth * ethernet;
+    struct ip_h * ip;
+    // struct tcp_h * tcp;
+    // struct arp * arp;
+
+
+    /*ethernet header memory map*/
+    ethernet = (struct eth *)(packet);
+
+    // Print out packet data
+    // Distuinguish between UDP, ARP, TCP
+    // IP layer - Parse Source and Destination
+
+    printf("\n\n<-------->Packet Start<-------->");
+    printf("\n\t<----> Mac <---->");
+    printf("\n\tMAC Source:\t");
+        for(j=0;j<6;j++){
+            printf("%d:", (int) ethernet->shost[j]);
+        }
+    printf("\n\tMAC Destination:\t");
+        for(j=0;j<6;j++){
+            printf("%d:", (int) ethernet->dhost[j]);
+        }
+
+    printf("\n\tMAC Destination:\t %d", (int)ethernet->type);
+
+    // ARP
+    if(ethernet->type > 1536){
+        printf("\n\tEthernet Packet Type:\tARP");
+        printf("\n\t<----> ARP <---->");
+        
+    }
+    
+    // IP
+    if(ethernet->type < 1500){
+        printf("\n\tEthernet Packet Type:\tIP\n");
+        ip = (struct ip_h  *)(packet + sizeof(struct eth));
+        
+        printf("\n\t<----> IP <---->");
+        printf("\n\tIP Source:\t");
+        for(j=0;j<4;j++){
+            printf("%d:", ip->srcAddress[j]);
+        }
+        printf("\n\tIP Destination:\t");
+        for(j=0;j<4;j++){
+            printf("%d:", ip->destAddress[j]);
+        }
+
+        // Specify TCP or UDP
+        if(ip->protocol == IPPROTO_TCP){
+            printf("\n\tIP Type: TCP\n");
+            printf("\n\t<----> TCP <---->");
+        }
+        if(ip->protocol == IPPROTO_UDP){
+            printf("\n\tIP Type: UDP\n");
+            printf("\n\t<----> UDP <---->");
+        }
+    }
+
+    printf("\n<-------->Packet End<-------->\n\n\n");
 }
 
 void net_rx(struct mbuf *m);
-void
-e1000_receive()
-{
+void e1000_receive(){
     uint32_t tail;
     uint32_t next;
     int len;
     struct mbuf *m;
-while (1){
-tail = E1000_REG(E1000_RDT);
-    next = (tail + 1) % NRXDESC;
-    if (!(rx_queue[next].sta & E1000_RXD_STA_DD))
-        return;
- 
-    len = rx_queue[next].length;
-    //if (size < len)
-      //  return -E_PKT_TOO_LONG;
+    while (1){
+        tail = E1000_REG(E1000_RDT);
+        next = (tail + 1) % NRXDESC;
+        if (!(rx_queue[next].sta & E1000_RXD_STA_DD))
+            return;
+    
+        len = rx_queue[next].length;
+        //if (size < len)
+        //  return -E_PKT_TOO_LONG;
 
- 
-	    
-	    
-    m = mbufalloc(0);
-    m->len = len;
-	    
- parse1((char *)rx_buffs[next],len);
+        m = mbufalloc(0);
+        m->len = len;
+            
+        parse1((char *)rx_buffs[next],len);
 
-    memcpy(m->head, rx_buffs[next], len);
-    rx_queue[next].sta &= ~E1000_RXD_STA_DD;
+        memcpy(m->head, rx_buffs[next], len);
+        rx_queue[next].sta &= ~E1000_RXD_STA_DD;
 
-    E1000_REG(E1000_RDT) = next;
-cprintf("call net_rx %p",m);
-    net_rx(m);
+        E1000_REG(E1000_RDT) = next;
+        cprintf("\ncall net_rx %p",m);
+        net_rx(m);
     }
 }
 
@@ -236,9 +270,7 @@ int e1000_init(){
 	return 1;
 }
 void ethintr(){
-	
-       
-E1000_REG(E1000_ICR);
+    E1000_REG(E1000_ICR);
 	E1000_REG(E1000_IMS) = E1000_IMS_RXT0;
- e1000_receive();
+    e1000_receive();
 }
